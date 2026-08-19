@@ -10,7 +10,7 @@ students, students read and track their minutes, and teachers monitor progress.
 - *What you'd improve with more time* → **What would improve with more time**
 - *How the design evolved with review input* → **Reviewer feedback & resolutions (UAT log)**
 
-**Live URL:** _(to be filled after deployment)_
+**Live URL:** **https://teacher-student-reading.onrender.com**
 **Demo credentials:**
 
 | Role | Username | Password |
@@ -82,6 +82,42 @@ students, students read and track their minutes, and teachers monitor progress.
 ├── decision-rationale.md    # THE write-up: decisions, tradeoffs, assumptions
 └── requirements.md          # Verbatim assessment prompt
 ```
+
+---
+
+## Live deployment (Render)
+
+The full stack (React SPA + Spring API in ONE Docker process, single origin) is deployed and can be
+reached at **`https://teacher-student-reading.onrender.com`**. Any browser tab there exercises the
+same auth, CSRF, and RBAC behavior as local — no CORS, single origin.
+
+**How it was built:** `render.yaml` Blueprint (Docker) → the `Dockerfile` builds the SPA, bakes it into
+the Spring fat jar, and runs one JVM on Render's injected `$PORT`.
+
+**Validated end-to-end on the live URL (smoke test):**
+
+| Check | Result |
+|-------|--------|
+| Health probe `GET /api/auth/csrf` | `204` ✅ |
+| Teacher login (`teacher/password`) | `200`, JWT cookie set ✅ |
+| Wrong password rejected | `401` ✅ |
+| Create assignment (book + due date → all students) | `200`, persisted ✅ |
+| Student opens reader → auto `IN_PROGRESS` | confirmed back in teacher view ✅ |
+| Status transitions `NOT_STARTED → IN_PROGRESS → COMPLETED` + monotonic minutes | ✅ |
+| Teacher dashboard reflects per-student progress | ✅ |
+| RBAC: unauthenticated `/api/student/assignments` | `401` ✅ |
+| SPA deep links (`/login`, `/student/assignments/1`) | serve the app ✅ |
+
+**Known production caveats (free tier)** — the tradeoff for a zero-cost always-public URL:
+1. **Ephemeral data on restart.** Render's free containers have no persistent disk, so `./data/portal`
+   (H2 file DB) starts fresh after every recycle/cold start (free tier also sleeps after ~15 min idle).
+   The **idempotent seeder restores the demo users + books**, and any data created in the *current*
+   running instance is served correctly — but data from a prior instance is not carried over. For
+   durable data you'd point the datasource at hosted Postgres/SQLite or Render's paid persistent disk.
+2. **Cold start is slow (~2–3 min on free CPU)** the first time after sleep: Docker + JVM + Hibernate
+   on a free core, not an app error. Click, wait ~15 s, then refresh once it's up.
+
+The local Quick Start below is unaffected by either caveat.
 
 ## Quick Start — local testing on a fresh environment
 

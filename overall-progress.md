@@ -11,10 +11,10 @@
 - [x] UAT feedback — auto-IN_PROGRESS on reader open, teacher dashboard interaction-refresh + 15s poll
 - [x] README — Quick Start, OpenAPI-style API reference, versions rationale, tradeoffs, UAT log
 - [x] Git repo committed (local) — 6 commits
-- [ ] **Deployment (Option A)** — BLOCKED waiting on credential from reviewer: GitHub PAT *or* Render/Railway/Fly/Vercel token
-- [ ] Live URL + fill README placeholder — after deployment
-- [ ] Post-deploy browser smoke test (login → assign → read → complete → teacher view on the live URL)
-- [ ] Final review pass of `decision-rationale.md` + README before sign-off
+- [x] Deployment — live on Render (free): https://teacher-student-reading.onrender.com
+- [x] README live URL filled + deployment caveats documented
+- [x] Post-deploy validation: API smoke test + browser smoke test (login → teacher dash → assign → student reader → complete → teacher view) all green
+- [x] Final review pass of `decision-rationale.md` + README before sign-off
 
 ## Open items user can still pick up
 

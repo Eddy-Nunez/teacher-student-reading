@@ -5,3 +5,6 @@ backend/data/
 
 # Local secrets (never commit)
 secrets/
+
+# ZDR/pi launch script (contains OpenRouter key — local only)
+pi-start.sh

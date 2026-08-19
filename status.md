@@ -12,10 +12,8 @@
 - [x] Tests (8/8 backend integration tests + browser E2E)
 - [x] README (setup, run, arch, tradeoffs, improvements)
 - [x] `decision-rationale.md` finalized
-- [ ] GitHub repo + initial commit (in progress)
-- [ ] Public deployment URL + credentials (blocked on credentials from user)
+- [x] GitHub repo + commit pushed to Eddy-Nunez/teacher-student-reading
+- [x] **Public URL:** https://teacher-student-reading.onrender.com (Render free, Docker single-process)
 
 ## Current focus
-Git init + commit, then deployment. Deployment requires user input: no hosting credentials/tokens
-exist on this box (no Render/Railway/Fly/GitHub auth). Options: (a) user provides a token/account,
-(b) ephemeral cloudflared tunnel (works now, but requires this machine to stay on).
+Deployment DONE — validated live at https://teacher-student-reading.onrender.com.
