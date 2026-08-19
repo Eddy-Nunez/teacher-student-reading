@@ -37,7 +37,18 @@ students, students read and track their minutes, and teachers monitor progress.
 | DB | H2 (file mode) | Zero-config local persistence, matches "all local" constraint |
 | Frontend | **React 19** (Vite), React Router, Axios | Scholastic's frontend stack; Vite for fast dev/build |
 | Styling | **Bootstrap 5** + small brand CSS | Industry-standard React styling; fast and consistent |
-| Tests | JUnit 5 + MockMvc integration tests | Real HTTP + JWT + role-guard coverage through the full pipeline |
+| Tests | JUnit 5 + MockMvc integration tests | Real HTTP + cookie session + role-guard coverage through the full pipeline |
+
+### Why these versions (not "latest" everywhere)
+
+- **Java 17** (not 21/25): current enterprise baseline — most Java shops, including the likely
+  baseline at Scholastic, run 17; fully supported by Spring Boot 3.5; records/enums (already used)
+  are 17 features. Newer LTS features (virtual threads, pattern matching) buy little at this scale.
+- **Spring Boot 3.5** (not 4.x): the local toolchain's start.spring.io default (`4.0.7.RELEASE`)
+  does not exist on Maven Central (it switched to calendar versions); 3.5.x is a maintained stable
+  line with the Spring Security 6 DSL used here. A 4.x upgrade is a reasonable follow-up.
+- **React 19 / Vite 8** — current majors (no downgrade). **Node 18+** is the minimum floor; the
+  build was verified on Node 22 LTS.
 
 ## Repository layout
 
@@ -235,6 +246,25 @@ matching the `XSRF-TOKEN` cookie (Axios injects it automatically; the SPA bootst
    be safe against out-of-order writes.
 5. **Bootstrap 5 for UI** — enterprise-standard styling framework; fast, consistent, familiar to
    graders; custom CSS limited to brand accents.
+
+## Reviewer feedback & resolutions (UAT log)
+
+Callouts made during the review conversation, with dispositions. This log is also useful as the
+"how did this evolve" narrative in a follow-up interview.
+
+| # | Reviewer callout | Disposition | Where |
+|---|------------------|-------------|-------|
+| 1 | "Assign to all students" is a reasonable model | ✅ Accepted as-is | Data model, auto-enrollment |
+| 2 | Opening a reading should immediately show *In progress*, not *Not started* | ✅ Fixed — reader mount promotes `NOT_STARTED → IN_PROGRESS` (explicit PUT, idempotent, no GET side effect) | `ReaderPage`; verified E2E |
+| 3 | Teacher dashboard should refresh student data on interaction (no manual reload) | ✅ Fixed — refetch on expand toggle + 15 s auto-poll | `TeacherDashboard` |
+| 4 | localStorage JWT is an XSS-exfiltration vector; cookie auth should be used | ✅ Fixed — JWT moved to `HttpOnly, SameSite=Lax` cookie; `Secure` in prod | `AuthCookie`, `SecurityConfig`, `client.js` |
+| 5 | A security pass should be an explicit part of the plan | ✅ Landed + tracked as a milestone; remaining hardening (refresh rotation, revocation) listed in "With more time" | `decision-rationale.md` §3 D2 / §6, `status.md` |
+| 6 | Confirm tests were updated for the cookie refactor | ✅ Suite migrated to cookie pipeline + new security regressions (`HttpOnly`, no token in body, `/me` from cookie) — 10/10 green | `ApiIntegrationTest` |
+| 7 | Role-guard coverage in tests | ✅ Covered — 403 both directions (student↔teacher) + 401 anonymous | `ApiIntegrationTest#roleGuardsAreEnforced` |
+| 8 | Session/cookie lifetime? | ✅ Documented — JWT expiry default 24 h (`app.jwt.expiration-ms`), no server-side revocation (tradeoff) | `decision-rationale.md` §3 D2 |
+| 9 | Why weren't latest Java/Spring Boot/Node used? | ✅ Documented — see "Why these versions" above | Tech stack section |
+| 10 | Is the CSRF token natural for cookie auth? | ✅ Documented — yes; double-submit is the SPA-standard complement to cookie sessions (defense-in-depth beyond `SameSite=Lax`) | `decision-rationale.md` §3 D2, API reference |
+| 11 | Windows/WSL2 local testing | ✅ Documented — WSL2 localhost forwarding + troubleshooting in Quick Start | Quick Start §1/§Troubleshooting |
 
 ## What would improve with more time
 
