@@ -120,6 +120,22 @@ roster later without migration pain (progress rows are per student/assignment).
 - **Monotonic guard** (`MAX(stored, incoming)`): cheap, deterministic, and prevents a stale device
   or retry from "un-reading" a student. The sync is a PUT of the full accumulated value, idempotent.
 
+### D7. Transaction boundaries & concurrency (data integrity)
+Reviewer-raised ("are H2 mutations atomic / any race?"). The key points and what was done:
+- **Per-statement atomicity is guaranteed by H2**, but multi-statement operations need an explicit
+  boundary. `POST /api/teacher/assignments` creates the assignment **and** every student progress
+  row; now annotated `@Transactional` so it commits as one unit — a mid-enrollment failure cannot
+  leave a partial assignment.
+- **Status-PUT was a read-modify-write true race**: two concurrent writers could both read the
+  stale minutes snapshot and the later commit could *reduce* the total (the in-memory `max()`
+  guard cannot close that, since both computed it off stale state). Fixed by a **pessimistic write
+  lock** (`PESSIMISTIC_WRITE`) inside a `@Transactional` method, serializing the read-modify-write
+  per (student, assignment). Covered by the `concurrentStatusUpdatesNeverLoseMinutes` regression
+  (parallel PUTs, final == max sent).
+- Tradeoff: a per-row lock adds a tiny serialization point; irrelevant at this app's write volume
+  (a student syncs ~1/s max). Pessimistic lock chosen over optimistic (retry-on-conflict) for
+  simplicity; H2 file DB and the lone-writer profile make it a non-issue.
+
 ### D5. Bootstrap 5 + brand CSS
 Chosen over custom CSS (slow, inconsistent) and over Tailwind (excellent but more tooling; Bootstrap
 is the more common enterprise default and reads as "boring and solid" to an interviewer). Custom CSS

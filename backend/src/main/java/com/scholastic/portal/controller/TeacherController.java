@@ -28,6 +28,8 @@ import com.scholastic.portal.repository.StudentAssignmentRepository;
 import com.scholastic.portal.repository.UserRepository;
 import com.scholastic.portal.security.AppPrincipal;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @RestController
 @RequestMapping("/api/teacher")
 public class TeacherController {
@@ -63,7 +65,12 @@ public class TeacherController {
                 .toList();
     }
 
-    /** Create an assignment for a book + due date, auto-assigned to all students. */
+    /**
+     * Create an assignment for a book + due date, auto-assigned to all students.
+     * {@code @Transactional} makes assignment + all student-progress rows commit as one unit,
+     * so a failure mid-enrollment cannot leave a partially-assigned assignment.
+     */
+    @Transactional
     @PostMapping("/assignments")
     public AssignmentSummaryResponse createAssignment(@AuthenticationPrincipal AppPrincipal principal,
                                                       @RequestBody CreateAssignmentRequest request) {

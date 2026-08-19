@@ -192,4 +192,40 @@ class ApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("student1"));
     }
+
+    /**
+     * Concurrency regression: concurrent status PUTs must not lose updates. The pessimistic
+     * row lock serializes the read-modify-write, so the final minutes equal the maximum sent,
+     * never a value computed from a stale snapshot.
+     */
+    @Test
+    @Order(10)
+    void concurrentStatusUpdatesNeverLoseMinutes() throws Exception {
+        Cookie token = authCookie("student1");
+        int threads = 6;
+        var pool = java.util.concurrent.Executors.newFixedThreadPool(threads);
+        var futures = new java.util.ArrayList<java.util.concurrent.Future<?>>();
+        // Distinct increasing values sent in parallel; final must be the max (never regressed).
+        for (int i = 1; i <= threads; i++) {
+            final int minutes = 20 + i;
+            futures.add(pool.submit(() -> {
+                try {
+                    mockMvc.perform(put("/api/student/assignments/1/status").cookie(token)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content("{\"status\":\"IN_PROGRESS\",\"elapsedMinutes\":" + minutes + "}"))
+                            .andExpect(status().isOk());
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }));
+        }
+        for (var f : futures) {
+            f.get(10, java.util.concurrent.TimeUnit.SECONDS);
+        }
+        pool.shutdown();
+
+        mockMvc.perform(get("/api/student/assignments/1").cookie(token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.elapsedMinutes").value(20 + threads));
+    }
 }

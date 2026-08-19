@@ -20,6 +20,8 @@ import com.scholastic.portal.model.StudentAssignment;
 import com.scholastic.portal.repository.StudentAssignmentRepository;
 import com.scholastic.portal.security.AppPrincipal;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @RestController
 @RequestMapping("/api/student")
 public class StudentController {
@@ -61,12 +63,19 @@ public class StudentController {
     /**
      * Student updates their own progress: status and/or accumulated minutes read.
      * Minutes are monotonic (never regress) to guard against stale client writes.
+     *
+     * Transactional + pessimistic row lock: the read-modify-write (compute max of stored vs
+     * incoming) is serialized per (student, assignment), so a concurrent writer cannot lose an
+     * update by committing a value computed from a stale snapshot.
      */
+    @Transactional
     @PutMapping("/assignments/{id}/status")
     public StudentAssignmentResponse updateStatus(@AuthenticationPrincipal AppPrincipal principal,
                                                   @PathVariable Long id,
                                                   @RequestBody UpdateProgressRequest request) {
-        StudentAssignment row = ownedRow(principal, id);
+        StudentAssignment row = progressRepository
+                .findLockedByStudentIdAndAssignmentId(principal.id(), id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Assignment not assigned to you"));
 
         if (request.status() != null) {
             row.setStatus(request.status());

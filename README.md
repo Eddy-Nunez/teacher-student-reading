@@ -128,7 +128,7 @@ npm run dev
 ### 5. Run the tests + build
 
 ```bash
-cd backend  && mvn test         # 9 API integration tests (auth/JWT/RBAC, CSRF session, monotonic minutes)
+cd backend  && mvn test         # 10 API integration tests (auth/JWT/RBAC, CSRF session, monotonic + concurrency)
 cd frontend && npm run build    # production bundle → frontend/dist
 ```
 
@@ -230,7 +230,8 @@ matching the `XSRF-TOKEN` cookie (Axios injects it automatically; the SPA bootst
 - `404` not assigned to this student.
 
 #### `PUT /api/student/assignments/{id}/status` *(CSRF)*
-- Updates the student's own progress. Minutes are **monotonic** (`max(stored, incoming)`).
+- Updates the student's own progress. Minutes are **monotonic** (`max(stored, incoming)`), merged
+  under a **pessimistic row lock** so concurrent writers cannot lose an update.
 - **Request:** `{ "status"?: enum, "elapsedMinutes"?: number }` — either field optional.
 - **200** → updated student-assignment object (same shape as the list item). `404` not assigned.
 
@@ -280,6 +281,7 @@ Graded requirement: state assumptions and tradeoffs openly. Full prose in
 | Books | Embedded curated excerpts | Not full novels; no rich-text authoring; reader works offline/iframe-free |
 | Timer | Client tick → 60 s server sync | Server value can lag ~1 min; multi-device sessions would need server-side timing |
 | Persistence | H2 file mode | Single-writer DB; demo scale only — SQLite/PG swap documented |
+| Atomicity | `@Transactional` create + pessimistic-lock status update | Per-row lock is a tiny serialization point; fine at this write volume |
 | UX | Interaction refresh + 15 s poll | Polling instead of websockets/SSE (simpler, fine at this scale) |
 | UI | Bootstrap 5 | Larger CSS bundle; limited custom brand identity |
 | Language | JavaScript (JSX) | No static typing during the sprint; TS is the natural next step |

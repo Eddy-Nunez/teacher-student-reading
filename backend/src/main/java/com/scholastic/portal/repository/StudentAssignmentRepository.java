@@ -4,10 +4,13 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.scholastic.portal.model.StudentAssignment;
+
+import jakarta.persistence.LockModeType;
 
 public interface StudentAssignmentRepository extends JpaRepository<StudentAssignment, Long> {
 
@@ -19,4 +22,13 @@ public interface StudentAssignmentRepository extends JpaRepository<StudentAssign
     List<StudentAssignment> findByStudentId(@Param("studentId") Long studentId);
 
     Optional<StudentAssignment> findByStudentIdAndAssignmentId(Long studentId, Long assignmentId);
+
+    /**
+     * Pessimistic write-lock for the read-modify-write status update, so concurrent writers
+     * serialize on the row | the in-memory monotonic max cannot lose an update (see StudentController).
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select s from StudentAssignment s where s.student.id = :studentId and s.assignment.id = :assignmentId")
+    Optional<StudentAssignment> findLockedByStudentIdAndAssignmentId(@Param("studentId") Long studentId,
+                                                                     @Param("assignmentId") Long assignmentId);
 }
