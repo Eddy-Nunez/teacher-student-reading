@@ -99,8 +99,13 @@ baseline, avoids bleeding-edge migration churn, and works with the familiar Spri
 - **Rejected:** server-side sessions (adds state, breaks horizontal scaling, more moving parts),
   OAuth2/SSO and WebAuthn/Passkeys (disproportionate setup — provider accounts, challenge-response
   flows — for a demo with no org context).
-- **Token storage** is localStorage + Axios interceptor for speed. Known XSS risk, mitigated by
-  React's default escaping; httpOnly-cookie storage noted as the production upgrade.
+- **Token storage (security pass, landed post-UAT):** the initial demo used localStorage + an
+  Axios interceptor. During review this was correctly called out as an XSS-exfiltration vector.
+  The app now issues the JWT in an **HttpOnly, SameSite=Lax, Secure-in-prod cookie** so
+  `document.cookie` cannot read it, with **double-submit CSRF** protection (readable `XSRF-TOKEN`
+  cookie + `X-XSRF-TOKEN` header via Axios). Defense-in-depth reasoning and the alternatives
+  considered (Origin checking, custom-header requirement, relying on SameSite alone) are covered
+  in the build session; token refresh/rotation remains the §4 hardening item.
 
 ### D3. Auto-assign to all students
 Covered in §1.2. The flip side is worth stating: there is **no way to assign a book to a subset of
@@ -155,7 +160,7 @@ Bootstrap bundle actually loads (computed styles check) after wiring it in.
 
 | Area | Chosen | Tradeoff accepted |
 |------|--------|-------------------|
-| Auth | JWT + seeded users | No registration/revocation; localStorage token storage |
+| Auth | JWT in HttpOnly cookie + CSRF, seeded users | No registration/revocation; token refresh-rotation still pending |
 | Assignment target | All students | No subset selection (documented UX copy) |
 | Books | Embedded excerpts + catalog | Content is curated excerpts, not full novels |
 | Timer | Client tick → 60 s server sync | Server value can lag up to a minute; offline minutes merge on next sync |
@@ -165,8 +170,9 @@ Bootstrap bundle actually loads (computed styles check) after wiring it in.
 
 ## 6. With more time…
 
-1. **Auth hardening:** registration, OAuth/SSO option, refresh-token rotation, httpOnly-cookie
-   storage, logout/revocation.
+1. **Auth hardening:** registration, OAuth/SSO option, refresh-token rotation + revocation
+   (httpOnly-cookie storage and CSRF already landed), plus an automated CSRF-mechanism test
+   (missing X-XSRF-TOKEN header → 403), currently only browser-E2E covered.
 2. **Rosters/classes:** assign books to selected students; teacher-managed student accounts.
 3. **Real database:** SQLite (matches the stated constraint) or Postgres + Flyway migrations, both
    via a `DataSource` swap; H2's dialect already keeps SQL generic.

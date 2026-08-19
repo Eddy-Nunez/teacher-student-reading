@@ -11,12 +11,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
- * Stateless JWT auth filter. Reads the {@code Authorization: Bearer <token>} header,
- * validates it, and populates the security context. No server-side session state.
+ * Stateless JWT auth filter. Resolves the JWT from the HttpOnly auth cookie (primary; safe from
+ * XSS via document.cookie) with an `Authorization` header fallback (convenience for API clients /
+ * scripts). Populates the security context; no server-side session state.
  */
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
@@ -31,9 +33,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        String header = request.getHeader("Authorization");
-        if (header != null && header.startsWith("Bearer ")) {
-            JwtService.TokenClaims claims = jwtService.parse(header.substring(7));
+        String token = tokenFromCookie(request);
+        if (token == null) {
+            token = tokenFromHeader(request);
+        }
+        if (token != null) {
+            JwtService.TokenClaims claims = jwtService.parse(token);
             if (claims != null) {
                 var principal = new AppPrincipal(claims.userId(), claims.username(), claims.role());
                 var authorities = List.of(
@@ -44,5 +49,27 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
         }
         filterChain.doFilter(request, response);
+    }
+
+    private String tokenFromCookie(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) {
+            return null;
+        }
+        for (Cookie cookie : cookies) {
+            if (AuthCookie.NAME.equals(cookie.getName())) {
+                String value = cookie.getValue();
+                return value == null || value.isBlank() ? null : value;
+            }
+        }
+        return null;
+    }
+
+    private String tokenFromHeader(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        if (header != null && header.startsWith("Bearer ")) {
+            return header.substring(7);
+        }
+        return null;
     }
 }

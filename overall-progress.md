@@ -10,12 +10,15 @@
 7. **Deployment** — GitHub repo + public URL with credentials. (next)
 
 ## Current task
-**UAT round complete.** Reviewer feedback acted on:
-- ✅ "Assign to all students is reasonable" — no change.
-- ✅ **Reader must auto-set IN_PROGRESS on open** (was: stayed NOT_STARTED until the 60s timer sync). Fixed: ReaderPage promotes NOT_STARTED→IN_PROGRESS immediately on mount (fire-and-forget PUT, retried by the periodic sync). Verified server-side: opening the reader flips status instantly with no 60s wait.
-- ✅ **Teacher dashboard refresh on interaction** (was: needed manual reload). Fixed: any "View students" toggle now also refetches assignments; added a 15s silent auto-poll so the table stays live. Verified: dashboard rendered updated counts (2/1/0) from a fresh fetch, no reload.
+✅ **Security pass landed (post-UAT reviewer feedback):** moved from localStorage Bearer-token auth to
+**HttpOnly + SameSite=Lax cookie** auth with **double-submit CSRF** protection. Verified live: login works,
+`document.cookie` exposes only the CSRF token (auth cookie invisible to XSS), mutations pass CSRF, and all
+prior flows (auto-IN_PROGRESS, timer, complete, teacher view) still work under cookie auth.
+- Tests migrated to cookie pipeline + added security regressions (HttpOnly cookie, no token in body, /me from cookie): **10/10 green**.
+- Stale-docs sweep done: README + decision-rationale no longer claim localStorage token storage.
+- Known gap (documented): CSRF mechanism itself is browser-E2E-only; an automated 403-without-header test is a noted follow-up.
 
-**Next**: deployment (Option A) — waiting on credentials from the reviewer/user. Repo + docs committed.
+Commit pending. **Next**: final docs review → commit → deployment (Option A, waiting on credential).
 
 ## Divergences / pivots (all updates)
 1. **Spring Boot version**: start.spring.io's `4.0.7.RELEASE` doesn't exist on Maven Central (calendar versioning). Pivoted to **Spring Boot 3.5.16** (stable, Java 17, familiar Security 6.x API).
