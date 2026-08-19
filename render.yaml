@@ -1,0 +1,20 @@
+# Render Blueprint — deploy the full-stack app (SPA + Spring API) as ONE web service.
+# Connect the repo in Render (New → Blueprint, or New → Web Service → Docker) and it provisions
+# this service automatically.
+services:
+  - type: web
+    name: teacher-student-reading
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/auth/csrf
+    autoDeploy: true
+    envVars:
+      - key: APP_JWT_SECRET
+        generateValue: true          # strong random secret per deployment
+      - key: APP_COOKIE_SECURE
+        value: "true"                # live URL is HTTPS → auth cookie must be Secure
+      - key: APP_SECURITY_CSRF_ENABLED
+        value: "true"
+      - key: APP_CORS_ALLOWED_ORIGINS
+        value: ""                    # same-origin: no CORS needed

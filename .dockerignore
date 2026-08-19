@@ -1,0 +1,10 @@
+# Build artifacts never enter Docker context
+**/node_modules
+**/target
+**/data
+**/dist
+frontend/node_modules
+backend/data
+backend/target
+backend/src/main/resources/static
+.git

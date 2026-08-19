@@ -34,3 +34,6 @@ build/
 
 ### H2 runtime data ###
 data/
+
+# Built frontend baked into the jar at package time (never committed)
+backend/src/main/resources/static/
