@@ -3,6 +3,13 @@
 A lightweight end-to-end web app for the Scholastic coding challenge: teachers assign books to
 students, students read and track their minutes, and teachers monitor progress.
 
+**Reading guide** (graded-requirement map):
+- *What was implemented* → **What was built**
+- *Key architectural decisions* → **Key architectural decisions** (+ **Why these versions**)
+- *Tradeoffs and assumptions* → **Tradeoffs & assumptions (explicit)**
+- *What you'd improve with more time* → **What would improve with more time**
+- *How the design evolved with review input* → **Reviewer feedback & resolutions (UAT log)**
+
 **Live URL:** _(to be filled after deployment)_
 **Demo credentials:**
 
@@ -23,10 +30,12 @@ students, students read and track their minutes, and teachers monitor progress.
   completed.
 - **Auth:** username/password with stateless **JWT** (BCrypt-hashed passwords) delivered in an
   **HttpOnly, SameSite=Lax cookie** (never exposed to JS/XSS), with **double-submit CSRF**
-  protection for state-changing requests, and role-based access control on every endpoint.
-  control separating teacher and student endpoints.
+  protection for state-changing requests, and role-based access control separating teacher and
+  student endpoints.
 - **Persistence:** SQLite-compatible **H2** database (file-backed locally), auto-seeded with 3
   demo books and 4 users on first boot.
+- **UX refinements from review:** opening the reader immediately marks it *In progress*; the
+  teacher dashboard refreshes student data on interaction and auto-polls every 15 s.
 
 ## Tech stack
 
@@ -234,18 +243,47 @@ matching the `XSRF-TOKEN` cookie (Axios injects it automatically; the SPA bootst
 
 ## Key architectural decisions (summary — full reasoning in `decision-rationale.md`)
 
+> Decisions marked **👤** were driven by reviewer feedback during the review conversation —
+> a record of how the design evolved with input, not just a static spec.
+
 1. **JWT in an HttpOnly cookie + method security** instead of server-side sessions — stateless,
    XSS-resistant (JS cannot read the token), SameSite=Lax + double-submit CSRF protection;
-   tradeoff: no server-side revocation (acceptable for the prototype; refresh rotation listed below).
+   tradeoff: no server-side revocation (acceptable for the prototype; refresh rotation listed
+   below). 👤 *(reviewer: "localStorage has a vulnerability; cookie should be used" — replaced
+   the initial Bearer-token-in-localStorage approach; CSRF token follows naturally, see
+   decision-rationale §3 D2.)*
 2. **Assignments auto-assign to every student** — no classroom/roster management; the prompt's
    "for student(s)" was interpreted as "all enrolled students" to keep scope lean.
+   👤 *(reviewer: "assign to all students is reasonable" — validated and kept.)*
 3. **Book catalog as first-class entity** — the prompt requires "a list of books to assign";
    assignments reference a book + due date rather than inlining a URL.
 4. **Client-side reading timer with periodic server sync** — avoids spamming the API every
    second, survives tab closes via localStorage, and the server keeps minutes **monotonic** to
    be safe against out-of-order writes.
-5. **Bootstrap 5 for UI** — enterprise-standard styling framework; fast, consistent, familiar to
+5. **Open = started + live teacher view** — reviewer-backed UX: opening the reader immediately
+   promotes `NOT_STARTED → IN_PROGRESS`, and the teacher dashboard refreshes on interaction +
+   auto-poll. 👤 *(UAT log #2, #3.)*
+6. **Bootstrap 5 for UI** — enterprise-standard styling framework; fast, consistent, familiar to
    graders; custom CSS limited to brand accents.
+
+## Tradeoffs & assumptions (explicit)
+
+Graded requirement: state assumptions and tradeoffs openly. Full prose in
+`decision-rationale.md` §1 / §5 — highlights:
+
+| Area | Choice | Tradeoff accepted |
+|------|--------|-------------------|
+| Auth | Seeded users, no registration | No self-service accounts; auth flow only |
+| Auth | 24 h JWT, no revocation | Stolen token valid until expiry; refresh rotation is a follow-up |
+| Auth storage | HttpOnly cookie + CSRF | More moving parts than localStorage; token invisible to JS (the point) |
+| Assignment target | Auto-assign to all students | No per-student selection yet (schema supports adding rosters later) |
+| Books | Embedded curated excerpts | Not full novels; no rich-text authoring; reader works offline/iframe-free |
+| Timer | Client tick → 60 s server sync | Server value can lag ~1 min; multi-device sessions would need server-side timing |
+| Persistence | H2 file mode | Single-writer DB; demo scale only — SQLite/PG swap documented |
+| UX | Interaction refresh + 15 s poll | Polling instead of websockets/SSE (simpler, fine at this scale) |
+| UI | Bootstrap 5 | Larger CSS bundle; limited custom brand identity |
+| Language | JavaScript (JSX) | No static typing during the sprint; TS is the natural next step |
+| Versions | Java 17 / Boot 3.5 / Node 18+ | Not the newest LTS in every slot — see "Why these versions" |
 
 ## Reviewer feedback & resolutions (UAT log)
 
