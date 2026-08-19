@@ -1,0 +1,70 @@
+/*
+ * Brand overrides + app-specific styles on top of Bootstrap 5.
+ * Layout, buttons, forms, tables, badges, alerts and spacing come from Bootstrap;
+ * this file only carries the product look-and-feel and bespoke components
+ * (reader typography, login card, session navbar).
+ */
+
+:root {
+  --bg: #f5f6f8;
+  --brand-primary: #2563eb;
+  --brand-green: #16a34a;
+}
+
+body { background: var(--bg); }
+
+h1 { font-size: 1.6rem; margin: 0.4rem 0 1rem; }
+h2 { font-size: 1.15rem; margin: 0 0 0.8rem; }
+h3 { margin: 0 0 0.25rem; }
+
+/* Aliases used across components */
+.muted { color: var(--bs-secondary-color); }
+.small { font-size: 0.85rem; }
+.hstack { gap: 0.75rem; }
+
+/* Layout */
+.container { max-width: 960px; padding: 1.5rem 1rem 4rem; }
+.center-screen { display: grid; place-items: center; min-height: 40vh; }
+.space-between { justify-content: space-between; align-items: flex-start; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; }
+
+/* Session navbar (simple, product-styled) */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  border-bottom: 1px solid var(--bs-border-color);
+  padding: 0.6rem 1.25rem;
+  margin-bottom: 1rem;
+}
+.navbar-brand { font-weight: 700; }
+.navbar-right { display: flex; gap: 0.75rem; align-items: center; }
+
+/* Status badges (semantic colors over Bootstrap .badge) */
+.badge-gray { background: #eef0f3; color: #4b5563; }
+.badge-blue { background: #dbeafe; color: #1d4ed8; }
+.badge-green { background: #dcfce7; color: #15803d; }
+
+/* Reader typography */
+.reader {
+  background: #fff;
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius-lg);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
+  padding: 1.5rem 2rem;
+  font-size: 1.05rem;
+}
+.reader p { margin: 0 0 1rem; }
+.reader .lead { font-style: italic; color: #374151; }
+.reader-header { margin-bottom: 1rem; gap: 1rem; }
+.reader-status { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+.minutes-read { font-size: 1rem; }
+
+/* Login */
+.login-page { display: grid; place-items: center; min-height: 100vh; padding: 1rem; }
+.login-card { width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 0.75rem; }
+.login-card h1 { margin-bottom: 0; }
+.demo-accounts { border-top: 1px dashed var(--bs-border-color); padding-top: 0.75rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.demo-accounts p { margin: 0 0.5rem 0 0; font-size: 0.85rem; color: var(--bs-secondary-color); }
+.demo-accounts button { font-size: 0.8rem; }
