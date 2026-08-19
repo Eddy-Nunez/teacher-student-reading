@@ -10,12 +10,12 @@
 7. **Deployment** — GitHub repo + public URL with credentials. (next)
 
 ## Current task
-Writing the written deliverables (step 6): root README + finalize `decision-rationale.md` (the graded artifact), then deploy.
+**UAT round complete.** Reviewer feedback acted on:
+- ✅ "Assign to all students is reasonable" — no change.
+- ✅ **Reader must auto-set IN_PROGRESS on open** (was: stayed NOT_STARTED until the 60s timer sync). Fixed: ReaderPage promotes NOT_STARTED→IN_PROGRESS immediately on mount (fire-and-forget PUT, retried by the periodic sync). Verified server-side: opening the reader flips status instantly with no 60s wait.
+- ✅ **Teacher dashboard refresh on interaction** (was: needed manual reload). Fixed: any "View students" toggle now also refetches assignments; added a 15s silent auto-poll so the table stays live. Verified: dashboard rendered updated counts (2/1/0) from a fresh fetch, no reload.
 
-**Everything else is done and verified:**
-- Backend: 8/8 tests green, jar builds, verified end-to-end via API + browser
-- Frontend: builds clean, Bootstrap 5 styling live (verified via computed styles)
-- Full E2E in browser: teacher login → assignment created → student login → reader opened (content renders) → timer ticked 66s → backend persisted IN_PROGRESS/1min via the 60s sync → mark complete → COMPLETED badge → teacher progress shows Ava COMPLETED/1min, others NOT_STARTED
+**Next**: deployment (Option A) — waiting on credentials from the reviewer/user. Repo + docs committed.
 
 ## Divergences / pivots (all updates)
 1. **Spring Boot version**: start.spring.io's `4.0.7.RELEASE` doesn't exist on Maven Central (calendar versioning). Pivoted to **Spring Boot 3.5.16** (stable, Java 17, familiar Security 6.x API).

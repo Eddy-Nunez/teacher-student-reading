@@ -177,6 +177,15 @@ Bootstrap bundle actually loads (computed styles check) after wiring it in.
 6. **Product:** pagination/search, book covers + blurbs, due-date reminders, multi-device reading
    sessions (server-authoritative minutes), teacher analytics (avg minutes, completion rates).
 
+### UAT refinements (reviewer feedback, already landed)
+- **Open = start:** opening the reader now immediately promotes `NOT_STARTED → IN_PROGRESS`
+  (previously it waited for the first 60 s timer sync). Implemented client-side as a PUT on reader
+  mount, so it's a single idempotent call and retried by the periodic sync if it fails. Serving a
+  GET with a mutation side-effect was deliberately avoided to keep the read path pure.
+- **Live teacher view:** the dashboard now refetches on any interaction (expanding a roster) and
+  silent-polls every 15 s, so teachers see status/minutes updates without a manual reload. Polling
+  was chosen over websockets/SSE for simplicity at this scale.
+
 ## 7. Follow-up conversation starters
 
 - How I'd split this into a team-sized codebase (contracts, service layer, events for progress

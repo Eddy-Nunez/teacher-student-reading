@@ -35,6 +35,13 @@ export default function ReaderPage() {
         // Start session from server minutes, then add any unsynced local time.
         const stored = Number(localStorage.getItem(storageKey) || 0)
         setMinutes(res.data.elapsedMinutes + stored)
+        // Opening the reader *is* starting to read: promote NOT_STARTED → IN_PROGRESS
+        // immediately rather than waiting for the first 60s timer sync.
+        if (res.data.status === 'NOT_STARTED') {
+          api.put(`/student/assignments/${id}/status`, { status: 'IN_PROGRESS', elapsedMinutes: res.data.elapsedMinutes })
+            .then((r) => !cancelled && setAssignment({ ...res.data, status: r.data.status, elapsedMinutes: r.data.elapsedMinutes }))
+            .catch(() => { /* next timer sync retries */ })
+        }
       })
       .catch(() => !cancelled && setError('Could not load the reading.'))
     return () => { cancelled = true }

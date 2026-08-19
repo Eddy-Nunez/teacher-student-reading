@@ -30,7 +30,17 @@ export default function TeacherDashboard() {
 
   useEffect(() => {
     load()
+    // Keep the progress table fresh while the page is open (silent refetch).
+    const poll = setInterval(load, 15000)
+    return () => clearInterval(poll)
   }, [load])
+
+  // Any page interaction also refreshes student data, so the teacher never has
+  // to manually reload to see new statuses/minutes.
+  const toggle = (id) => {
+    setExpanded((prev) => (prev === id ? null : id))
+    load()
+  }
 
   const createAssignment = async (e) => {
     e.preventDefault()
@@ -102,7 +112,7 @@ export default function TeacherDashboard() {
                   key={a.id}
                   a={a}
                   expanded={expanded === a.id}
-                  onToggle={() => setExpanded(expanded === a.id ? null : a.id)}
+                  onToggle={() => toggle(a.id)}
                 />
               ))}
             </tbody>
