@@ -17,11 +17,17 @@
 - [x] Post-validation polish: one-click demo-account login (teacher + each student); documented 2 added assumptions
   (no caching — no scale/latency spec; demo-UX defaults via build + UAT)
 - [x] Final review pass of `decision-rationale.md` + README before sign-off
+- [x] Security hardening (post-launch review): H2 console gated OFF in prod (`H2_CONSOLE_ENABLED=false`);
+  X-Frame-Options restored; strict allow-list CSP + Permissions-Policy + Referrer-Policy; CORS
+  deny-by-default (no wildcard). **Deployed live (`5c4a17a`)** — all 6 headers verified on SPA + API,
+  SPA renders + full login works under the policy.
 
 ## Workflow lesson (recorded for future sessions)
 - **Always validate locally BEFORE anything that triggers a deploy.** For this stack:
   local backend (jar on :8080) + Vite dev frontend (:5173, serves source + proxies /api) is a fast
   validate-in-a-minute loop; run the browser E2E there first, then commit/push to trigger Render.
+- **Never deploy to the public URL without the user's explicit go-ahead** (learned the hard way twice).
+  Local validation + commit are mine to do; firing the Render deploy is a user-approved action.
 
 ## Open items user can still pick up
 
