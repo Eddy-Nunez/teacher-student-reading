@@ -187,6 +187,13 @@ Every state-changing request (POST, PUT, DELETE) must also send the double-submi
 matching the `XSRF-TOKEN` cookie (Axios injects it automatically; the SPA bootstraps the cookie via
 `GET /api/auth/csrf`). Endpoints are guarded by role — the `TEACHER`/`STUDENT` columns below are requirements.
 
+**Security headers (production).** As a public, credential-bearing app, every response ships a strict
+allow-list **CSP** (`default-src 'none'`; only same-origin scripts/styles/img/font; `object-src 'none'`;
+`frame-ancestors 'none'`), **Permissions-Policy** least-privilege, **Referrer-Policy: no-referrer**,
+`X-Content-Type-Options: nosniff`, and `X-Frame-Options: SAMEORIGIN`. **CORS is deny-by-default**: the SPA
+and API are same-origin (one jar), so no cross-origin is ever allowed except an explicitly-configured dev
+origin. **H2 console is gated off in production** (`H2_CONSOLE_ENABLED=false` default; local dev re-enables it).
+
 **Common error codes:** `401` unauthenticated / invalid session · `403` wrong role or missing CSRF token ·
 `400` malformed request · `404` resource not found.
 

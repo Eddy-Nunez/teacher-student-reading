@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -23,6 +24,7 @@ import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
 import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
 import org.springframework.util.StringUtils;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -54,14 +56,40 @@ public class SecurityConfig {
                                            @Value("${spring.h2.console.enabled:false}") boolean h2ConsoleEnabled) throws Exception {
         http
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            // Apply the CORS source (deny-by-default, narrow dev allow-list) to secured endpoints.
+            .cors(Customizer.withDefaults())
+            // Security headers: the portal is a public, credential-bearing app, so the same-origin
+            // SPA gets a strict CSP (fully self-hosted: no CDNs, no inline scripts/styles) and
+            // conservative feature/referrer policies. Frame embedding stays SAMEORIGIN except when
+            // the dev H2 console (a frameset UI) is actually enabled.
             .headers(h -> {
-                // Frame embedding is only relaxed for the dev H2 console (a frameset UI). In
-                // production the console must stay off, so restore clickjacking protection.
                 if (h2ConsoleEnabled) {
                     h.frameOptions(f -> f.disable());
                 } else {
                     h.frameOptions(f -> f.sameOrigin());
                 }
+                // Strict, allowlist CSP: the built SPA only loads same-origin assets and talks to
+                // the same-origin /api. 'none' default hardens anything we forgot to allow.
+                h.contentSecurityPolicy(csp -> csp.policyDirectives(
+                    "default-src 'none'; " +
+                    // React SPA + same-origin API
+                    "script-src 'self'; " +
+                    "script-src-elem 'self'; " +
+                    "connect-src 'self'; " +
+                    // Bundled Bootstrap CSS + React (no inline style attrs on pages)
+                    "style-src 'self'; " +
+                    "img-src 'self' data:; " +
+                    "font-src 'self' data:; " +
+                    // No objects, no frames-equity, no external submissions
+                    "object-src 'none'; " +
+                    "frame-ancestors 'none'; " +
+                    "base-uri 'self'; " +
+                    "form-action 'self'"));
+                // Restrict browser feature/permission grants to a least-privilege set.
+                h.permissionsPolicy(pp -> pp.policy(
+                    "camera=(), microphone=(), geolocation=(), fullscreen=(), payment=()"));
+                // Don't leak the site URL/query into cross-origin referrers.
+                h.referrerPolicy(rp -> rp.policy(ReferrerPolicy.NO_REFERRER));
             })
             .authorizeHttpRequests(auth -> auth
                 // Public auth + dev console (console only reachable when enabled).
@@ -101,17 +129,29 @@ public class SecurityConfig {
     }
 
     /**
-     * CORS only matters for cross-origin deployments. Local dev and the same-origin production
-     * reverse proxy need no CORS, but it's configured defensively. Allow-Credentials is set so a
-     * future split-domain setup can pass cookies.
+     * CORS is same-origin in production (SPA + /api are baked into one jar behind a single
+     * origin), so cross-origin is deny-by-default: when no allowed origin is configured, no
+     * {@code Access-Control-*} headers are emitted at all and foreign origins can't consume the
+     * cookie/CSRF-equipped API. Only an explicit dev origin (e.g. the Vite proxy during local
+     * split-frontend work) opens a narrow, allow-listed cross-origin path.
      */
     @Bean
-    public CorsConfigurationSource corsConfigurationSource(@Value("${app.cors.allowed-origins:http://localhost:5173}") String allowed) {
+    public CorsConfigurationSource corsConfigurationSource(@Value("${app.cors.allowed-origins:}") String allowed) {
         var config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(allowed.split(",")));
+        var origins = new java.util.ArrayList<String>();
+        if (allowed != null && !allowed.isBlank()) {
+            for (var o : allowed.split(",")) {
+                var t = o.trim();
+                if (!t.isEmpty()) origins.add(t);
+            }
+        }
+        config.setAllowedOrigins(origins);
+        // Only the methods/headers this app actually uses; never wildcard the allowed header list.
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
+        config.setAllowedHeaders(List.of("Content-Type", "X-XSRF-TOKEN"));
+        config.setExposedHeaders(List.of());
         config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
         var source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;

@@ -207,6 +207,13 @@ Bootstrap bundle actually loads (computed styles check) after wiring it in.
 > local dev script. This is exactly the prod-vs-non-prod config discipline a second pair of eyes
 > catches — and why confroning the live URL in review matters.
 
+> **Follow-up hardening (same review):** the portal is public + credential-bearing, so it now ships
+> a **strict allow-list CSP** (`default-src 'none'`; script/connect/style/img/font all same-origin;
+> `frame-ancestors 'none'`; `object-src 'none'`), a **Permissions-Policy** least-privilege set,
+> **Referrer-Policy: no-referrer**, and **CORS deny-by-default** (same-origin app; no `*` headers;
+> only an explicit dev origin can ever trigger cross-origin). Verified the built SPA + JSON API both
+> carry the headers and still function end-to-end under them.
+
 1. **Auth hardening:** registration, OAuth/SSO option, refresh-token rotation + revocation
    (httpOnly-cookie storage and CSRF already landed), plus an automated CSRF-mechanism test
    (missing X-XSRF-TOKEN header → 403), currently only browser-E2E covered.
