@@ -13,7 +13,9 @@
 - [x] Git repo committed (local) — 6 commits
 - [x] Deployment — live on Render (free): https://teacher-student-reading.onrender.com
 - [x] README live URL filled + deployment caveats documented
-- [x] Post-deploy validation: API smoke test + browser smoke test (login → teacher dash → assign → student reader → complete → teacher view) all green
+- [x] **Post-deploy validation:** API smoke test + browser smoke test (login → teacher dash → assign → student reader → complete → teacher view) all green
+- [x] Post-validation polish: one-click demo-account login (teacher + each student); documented 2 added assumptions
+  (no caching — no scale/latency spec; demo-UX defaults via build + UAT)
 - [x] Final review pass of `decision-rationale.md` + README before sign-off
 
 ## Open items user can still pick up

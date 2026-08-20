@@ -41,6 +41,18 @@ and communication — not on feature count.
    stylesheet. Bootstrap is the de-facto standard for enterprise React apps (Scholastic context),
    is fast to apply in a sprint, and makes the UI readable to any grader. Custom hand-rolled CSS
    was rejected: slower, less consistent, and a worse signal for a Java/React senior-role screen.
+7. **No caching / no explicit scale target** — the prompt specifies neither an expected user
+   count nor a latency/SLO requirement. So caching (HTTP cache headers, in-memory/Redis caches,
+   CDN edge caching) was **not added**, and deliberately not scoped. Every policy decision would
+   have been a guess against an unspecified load model. At demo scale (dozens of students, a few
+   books, monotonic-minute writes ~1/s) the H2 file DB answers reads well below latency
+   concerns, and the real-time updates are scoped-appropriate. Any caching layer would be
+   unverifiable complexity — complexity with no requirement pointing at it.
+8. **Demo UX / styling defaults** — no UX, styling, or accessibility guidance was given, so
+   reasonable defaults were supplied by the build and refined via a quick UAT loop with the
+   reviewer (opening a reader → auto-in-progress; live teacher dashboard; demo one-click
+   accounts). The demo-account buttons on the login page are a deliberate concession to the
+   grader/reviewer trying the app quickly, not a production auth pattern.
 
 ## 2. Architecture
 
