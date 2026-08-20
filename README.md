@@ -1,14 +1,14 @@
 # Teacher Reading Assignment Portal
 
 A lightweight end-to-end web app for the Scholastic coding challenge: teachers assign books to
-students, students read and track their minutes, and teachers monitor progress.
+students, and students track + record reading against them.
 
-**Reading guide** (graded-requirement map):
+**Reading guide** (maps prompt wording to sections):
 - *What was implemented* → **What was built**
 - *Key architectural decisions* → **Key architectural decisions** (+ **Why these versions**)
-- *Tradeoffs and assumptions* → **Tradeoffs & assumptions (explicit)**
+- *Tradeoffs and assumptions* → **Tradeoffs & assumptions**
 - *What you'd improve with more time* → **What would improve with more time**
-- *How the design evolved with review input* → **Reviewer feedback & resolutions (UAT log)**
+- *How the design evolved with review input* → **UAT log**
 
 **Live URL:** **https://teacher-student-reading.onrender.com**
 **Demo credentials:**
@@ -22,20 +22,20 @@ students, students read and track their minutes, and teachers monitor progress.
 
 ## What was built
 
-- **Teacher flow:** browse a book catalog, create a reading assignment (book + due date) that is
-  automatically assigned to every student, and view per-student status (`NOT_STARTED`,
-  `IN_PROGRESS`, `COMPLETED`) plus minutes read for any assignment.
-- **Student flow:** see assigned readings, open the reader view, track reading time with a
-  session timer (localStorage-backed, synced to the server), update status, and mark readings
-  completed.
-- **Auth:** username/password with stateless **JWT** (BCrypt-hashed passwords) delivered in an
-  **HttpOnly, SameSite=Lax cookie** (never exposed to JS/XSS), with **double-submit CSRF**
-  protection for state-changing requests, and role-based access control separating teacher and
-  student endpoints.
-- **Persistence:** SQLite-compatible **H2** database (file-backed locally), auto-seeded with 3
-  demo books and 4 users on first boot.
-- **UX refinements from review:** opening the reader immediately marks it *In progress*; the
-  teacher dashboard refreshes student data on interaction and auto-polls every 15 s.
+- **Teacher:** browse the book list, create a reading assignment (book + due date) auto-assigned to
+  every student, and view per-student status (`NOT_STARTED` / `IN_PROGRESS` / `COMPLETED`) + minutes.
+- **Student:** see assigned books, open the reader with a **live "X min Y sec" timer**, track
+  reading time (synced to the server), update status, and mark readings completed.
+- **Auth:** username/password with stateless **JWT** (BCrypt) in an **HttpOnly, SameSite=Lax cookie**
+  (never exposed to JS), **double-submit CSRF** on state changes, and **role-based access control**
+  separating teacher vs student.
+- **Security hardening:** strict **CSP + security headers** (HSTS, clickjacking protection, and
+  Permissions-Policy) on every response, **deny-by-default CORS**, and the **H2 console gated off** in
+  production (dev-only opt-in) — for a public, credential-bearing app.
+- **Persistence:** SQLite-compatible **H2** database (file-backed locally), auto-seeded with 3 books
+  and 4 users on first boot.
+- **UX from review (CSV):** open reader → auto *In progress*, live "X min Y sec" timer (freezes on
+  complete), one-click demo login, teacher dashboard interaction-refresh + 15s poll for updates.
 
 ## Tech stack
 
@@ -50,14 +50,12 @@ students, students read and track their minutes, and teachers monitor progress.
 
 ### Why these versions (not "latest" everywhere)
 
-- **Java 17** (not 21/25): current enterprise baseline — most Java shops, including the likely
-  baseline at Scholastic, run 17; fully supported by Spring Boot 3.5; records/enums (already used)
-  are 17 features. Newer LTS features (virtual threads, pattern matching) buy little at this scale.
-- **Spring Boot 3.5** (not 4.x): the local toolchain's start.spring.io default (`4.0.7.RELEASE`)
-  does not exist on Maven Central (it switched to calendar versions); 3.5.x is a maintained stable
-  line with the Spring Security 6 DSL used here. A 4.x upgrade is a reasonable follow-up.
-- **React 19 / Vite 8** — current majors (no downgrade). **Node 18+** is the minimum floor; the
-  build was verified on Node 22 LTS.
+- **Java 17** (not 21/25): the common enterprise baseline; fully supported by Boot 3.5; records/enums
+  are 17 features. Newer LTS capabilities buy little at this scale.
+- **Spring Boot 3.5** (not 4.x): the local start.spring.io default (`4.0.7.RELEASE`) isn't on Maven
+  Central (it moved to calendar versions); 3.5.x is a stable line with the Security 6 DSL used here.
+  A 4.x upgrade is a reasonable follow-up.
+- **React 19 / Vite 8** — current majors. **Node 18+** minimum; build verified on Node 22 LTS.
 
 ## Repository layout
 
@@ -87,37 +85,36 @@ students, students read and track their minutes, and teachers monitor progress.
 
 ## Live deployment (Render)
 
-The full stack (React SPA + Spring API in ONE Docker process, single origin) is deployed and can be
-reached at **`https://teacher-student-reading.onrender.com`**. Any browser tab there exercises the
-same auth, CSRF, and RBAC behavior as local — no CORS, single origin.
+The full stack (React SPA + Spring API in ONE Docker process, single origin) is live at
+**`https://teacher-student-reading.onrender.com`** — no CORS; same auth/CSRF/role-based access
+control as local.
 
-**How it was built:** `render.yaml` Blueprint (Docker) → the `Dockerfile` builds the SPA, bakes it into
-the Spring fat jar, and runs one JVM on Render's injected `$PORT`.
+**Build:** `render.yaml` Blueprint (Docker) → `Dockerfile` builds the SPA into the Spring fat jar and
+runs one JVM on Render's injected `$PORT`.
 
-**Validated end-to-end on the live URL (smoke test):**
+**Smoke-test results:**
 
 | Check | Result |
 |-------|--------|
-| Health probe `GET /api/auth/csrf` | `204` ✅ |
-| Teacher login (`teacher/password`) | `200`, JWT cookie set ✅ |
-| Wrong password rejected | `401` ✅ |
-| Create assignment (book + due date → all students) | `200`, persisted ✅ |
-| Student opens reader → auto `IN_PROGRESS` | confirmed back in teacher view ✅ |
-| Status transitions `NOT_STARTED → IN_PROGRESS → COMPLETED` + monotonic minutes | ✅ |
-| Teacher dashboard reflects per-student progress | ✅ |
-| RBAC: unauthenticated `/api/student/assignments` | `401` ✅ |
+| Health `GET /api/auth/csrf` | `204` ✅ |
+| Teacher login (`teacher/password`) | `200`, JWT cookie ✅ |
+| Wrong password | `401` ✅ |
+| Create assignment (book + due date) | `200`, persisted ✅ |
+| Open reader → auto `IN_PROGRESS` | reflected in teacher view ✅ |
+| Status → `COMPLETED` + monotonic minutes | ✅ |
+| Teacher dashboard progress view | ✅ |
+| Role-based access control: anonymous `/api/student/assignments` | `401` ✅ |
 | SPA deep links (`/login`, `/student/assignments/1`) | serve the app ✅ |
 
-**Known production caveats (free tier)** — the tradeoff for a zero-cost always-public URL:
-1. **Ephemeral data on restart.** Render's free containers have no persistent disk, so `./data/portal`
-   (H2 file DB) starts fresh after every recycle/cold start (free tier also sleeps after ~15 min idle).
-   The **idempotent seeder restores the demo users + books**, and any data created in the *current*
-   running instance is served correctly — but data from a prior instance is not carried over. For
-   durable data you'd point the datasource at hosted Postgres/SQLite or Render's paid persistent disk.
-2. **Cold start is slow (~2–3 min on free CPU)** the first time after sleep: Docker + JVM + Hibernate
-   on a free core, not an app error. Click, wait ~15 s, then refresh once it's up.
+**Free-tier caveats** (the cost of a zero-cost always-public URL):
+1. **Ephemeral data.** Free containers have no persistent disk, so `./data/portal` (H2) resets on
+   restart (the tier also sleeps after ~15 min idle). The **idempotent seeder restores demo users +
+   books**, but data written to a prior instance is gone. For durable data, use hosted
+   Postgres/SQLite or Render's paid persistent disk.
+2. **Slow cold start (~2–3 min)** the first time after sleep: Docker + JVM + Hibernate on a free
+   core. Click, wait ~15 s, refresh once it's up.
 
-The local Quick Start below is unaffected by either caveat.
+Neither affects local dev.
 
 ## Quick Start — local testing on a fresh environment
 
@@ -142,7 +139,7 @@ cd backend
 mvn spring-boot:run
 ```
 
-On first boot the app creates its H2 database at `backend/data/` and **auto-seeds** a book catalog and the
+On first boot the app creates its H2 database at `backend/data/` and **auto-seeds** a book list and the
 demo users (idempotent — nothing to configure).
 
 ### 3. Start the frontend (http://localhost:5173)
@@ -153,18 +150,36 @@ npm install
 npm run dev
 ```
 
-### 4. Verify the app works
+### 4. (Optional) Run it all in one container via Docker
 
-1. Open http://localhost:5173 and sign in as **`teacher` / `password`**.
+The `Dockerfile` builds the React SPA into the Spring jar and serves both from ONE process — same image
+Render uses, so this reproduces production exactly. Requires Docker only (not Java/Maven/Node locally):
+
+```bash
+docker build -t portal .
+docker run -p 8080:8080 portal
+# open http://localhost:8080
+```
+
+> The Dockerfile binds `$PORT` (Render's injected env) with a `:8080` fallback, so it runs identically
+> locally and on Render. Use the manual two-server path above if you want the Vite dev loop (hot reload).
+> Note that Docker persists data only while the container runs; use `docker run -v ./backend/data:/app/data`
+> to keep the H2 file locally.
+
+### 5. Verify the app works
+
+(Port differs by setup: the manual Vite path uses `:5173`; the Docker path uses `:8080`.)
+
+1. Open `http://localhost:<port>` and sign in as **`teacher` / `password`**.
 2. Create a reading assignment (pick a book + due date) — it is assigned to all students.
 3. Sign out, sign in as **`student1` / `password`** — open the reader → status flips to *In progress*, minutes
    tick up → **Mark as completed**.
 4. Sign back in as **`teacher`** — the assignment now shows that student's updated status/minutes (auto-refresh).
 
-### 5. Run the tests + build
+### 6. Run the tests + build
 
 ```bash
-cd backend  && mvn test         # 10 API integration tests (auth/JWT/RBAC, CSRF session, monotonic + concurrency)
+cd backend  && mvn test         # 10 API integration tests (auth/JWT/role-based access, CSRF session, monotonic + concurrency)
 cd frontend && npm run build    # production bundle → frontend/dist
 ```
 
@@ -299,7 +314,7 @@ origin. **H2 console is gated off in production** (`H2_CONSOLE_ENABLED=false` de
 2. **Assignments auto-assign to every student** — no classroom/roster management; the prompt's
    "for student(s)" was interpreted as "all enrolled students" to keep scope lean.
    👤 *(reviewer: "assign to all students is reasonable" — validated and kept.)*
-3. **Book catalog as first-class entity** — the prompt requires "a list of books to assign";
+3. **Book list as first-class entity** — the prompt requires "a list of books to assign";
    assignments reference a book + due date rather than inlining a URL.
 4. **Client-side reading timer with periodic server sync** — avoids spamming the API every
    second, survives tab closes via localStorage, and the server keeps minutes **monotonic** to

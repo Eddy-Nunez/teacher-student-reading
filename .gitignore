@@ -1,5 +1,6 @@
 # Local H2 databases
 backend/data/
+data/
 # Logs
 *.log
 

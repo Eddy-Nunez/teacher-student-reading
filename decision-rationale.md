@@ -24,7 +24,7 @@ and communication — not on feature count.
    requirement pointing at it. The teacher UI communicates this explicitly ("Assigned to all 3
    students") so the behavior is a feature, not a surprise.
 3. **Books** — "a list of books should be available to assign" → modeled a **first-class Book
-   catalog** (title, author, description, embedded content, optional source URL); assignments
+   list** (title, author, description, embedded content, optional source URL); assignments
    reference a book + due date. Rejected: inlining a `referenceUrl` directly on the assignment
    (the original design sketch) — that fails the "list of available books" requirement. Books embed
    short public-domain excerpts so the reader works without depending on external sites (many
@@ -170,7 +170,7 @@ Bootstrap bundle actually loads (computed styles check) after wiring it in.
 ## 4. Testing approach & quality
 
 - **8 MockMvc integration tests** run the *full stack* against a seeded in-memory H2: login success
-  and failure, catalog listing, assignment creation with auto-enrollment, student list/detail,
+  and failure, book listing, assignment creation with auto-enrollment, student list/detail,
   status + minutes update, **monotonic minutes** behavior, teacher progress view, and role guards
   (403s both directions, 401 for anonymous).
 - A **regression test** (`studentUsesAssignmentIdNotProgressRowId`) pins a real bug found during
@@ -190,7 +190,7 @@ Bootstrap bundle actually loads (computed styles check) after wiring it in.
 |------|--------|-------------------|
 | Auth | JWT in HttpOnly cookie + CSRF, seeded users | No registration/revocation; token refresh-rotation still pending |
 | Assignment target | All students | No subset selection (documented UX copy) |
-| Books | Embedded excerpts + catalog | Content is curated excerpts, not full novels |
+| Books | Embedded excerpts + book list | Content is curated excerpts, not full novels |
 | Timer | Client tick → 60 s server sync | Server value can lag up to a minute; offline minutes merge on next sync |
 | Styling | Bootstrap 5 | Larger CSS bundle; limited custom brand identity |
 | Persistence | H2 file | Single-writer file DB; fine at demo scale |
