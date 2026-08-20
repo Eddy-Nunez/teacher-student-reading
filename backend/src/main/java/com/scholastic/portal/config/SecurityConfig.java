@@ -60,13 +60,14 @@ public class SecurityConfig {
             .cors(Customizer.withDefaults())
             // Security headers: the portal is a public, credential-bearing app, so the same-origin
             // SPA gets a strict CSP (fully self-hosted: no CDNs, no inline scripts/styles) and
-            // conservative feature/referrer policies. Frame embedding stays SAMEORIGIN except when
-            // the dev H2 console (a frameset UI) is actually enabled.
+            // conservative feature/referrer policies. Frame embedding is DENY (never frame this
+            // app) to match the CSP frame-ancestors 'none', except when the dev H2 console (a
+            // frameset UI) is actually enabled.
             .headers(h -> {
                 if (h2ConsoleEnabled) {
                     h.frameOptions(f -> f.disable());
                 } else {
-                    h.frameOptions(f -> f.sameOrigin());
+                    h.frameOptions(f -> f.deny());
                 }
                 // Strict, allowlist CSP: the built SPA only loads same-origin assets and talks to
                 // the same-origin /api. 'none' default hardens anything we forgot to allow.
