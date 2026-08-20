@@ -4,11 +4,11 @@ A lightweight end-to-end web app for the Scholastic coding challenge: teachers a
 students, and students track + record reading against them.
 
 **Reading guide** (maps prompt wording to sections):
-- *What was implemented* → **What was built**
-- *Key architectural decisions* → **Key architectural decisions** (+ **Why these versions**)
-- *Tradeoffs and assumptions* → **Tradeoffs & assumptions**
-- *What you'd improve with more time* → **What would improve with more time**
-- *How the design evolved with review input* → **UAT log**
+- *What was implemented* → [**What was built**](#what-was-built)
+- *Key architectural decisions* → [**Key architectural decisions**](#key-decisions) (+ [**Why these versions**](#why-these-versions))
+- *Tradeoffs and assumptions* → [**Tradeoffs & assumptions**](#tradeoffs)
+- *What you'd improve with more time* → [**What would improve with more time**](#improvements)
+- *How the design evolved with review input* → [**UAT log**](#uat-log)
 
 **Live URL:** **https://teacher-student-reading.onrender.com**
 **Demo credentials:**
@@ -20,6 +20,7 @@ students, and students track + record reading against them.
 
 ---
 
+<a id="what-was-built"></a>
 ## What was built
 
 - **Teacher:** browse the book list, create a reading assignment (book + due date) auto-assigned to
@@ -48,6 +49,7 @@ students, and students track + record reading against them.
 | Styling | **Bootstrap 5** + small brand CSS | Industry-standard React styling; fast and consistent |
 | Tests | JUnit 5 + MockMvc integration tests | Real HTTP + cookie session + role-guard coverage through the full pipeline |
 
+<a id="why-these-versions"></a>
 ### Why these versions (not "latest" everywhere)
 
 - **Java 17** (not 21/25): the common enterprise baseline; fully supported by Boot 3.5; records/enums
@@ -300,6 +302,7 @@ origin. **H2 console is gated off in production** (`H2_CONSOLE_ENABLED=false` de
 - Opening the reader (client-side) immediately promotes `NOT_STARTED → IN_PROGRESS`; the server's `GET .../{id}`
   itself performs **no** state change (mutations are explicit PUTs only).
 
+<a id="key-decisions"></a>
 ## Key architectural decisions (summary — full reasoning in `decision-rationale.md`)
 
 > Decisions marked **👤** were driven by reviewer feedback during the review conversation —
@@ -325,6 +328,7 @@ origin. **H2 console is gated off in production** (`H2_CONSOLE_ENABLED=false` de
 6. **Bootstrap 5 for UI** — enterprise-standard styling framework; fast, consistent, familiar to
    graders; custom CSS limited to brand accents.
 
+<a id="tradeoffs"></a>
 ## Tradeoffs & assumptions (explicit)
 
 Graded requirement: state assumptions and tradeoffs openly. Full prose in
@@ -345,6 +349,7 @@ Graded requirement: state assumptions and tradeoffs openly. Full prose in
 | Language | JavaScript (JSX) | No static typing during the sprint; TS is the natural next step |
 | Versions | Java 17 / Boot 3.5 / Node 18+ | Not the newest LTS in every slot — see "Why these versions" |
 
+<a id="uat-log"></a>
 ## Reviewer feedback & resolutions (UAT log)
 
 Callouts made during the review conversation, with dispositions. This log is also useful as the
@@ -367,6 +372,7 @@ Callouts made during the review conversation, with dispositions. This log is als
 | 13 | The app is **iframe-able** — no clickjacking protection (X-Frame-Options was globally disabled for the H2 console's frameset) | ✅ **Fixed (your callout)** — `X-Frame-Options: SAMEORIGIN` restored (and CSP `frame-ancestors 'none'`) when the console is off; verified on live | `SecurityConfig` |
 | 14 | As a secured, publicly-available app, it should ship **security headers: CSP + access-control** | ✅ **Fixed** — strict allow-list **CSP**, **Permissions-Policy**, **Referrer-Policy**, **CORS deny-by-default** (no wildcard). Verified live that the SPA still renders and full login works under the policy | `SecurityConfig`, `render.yaml`, API reference |
 
+<a id="improvements"></a>
 ## What would improve with more time
 
 - Real registration + classroom/roster management (assign to selected students).
