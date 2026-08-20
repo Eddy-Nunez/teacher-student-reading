@@ -348,6 +348,9 @@ Callouts made during the review conversation, with dispositions. This log is als
 | 9 | Why weren't latest Java/Spring Boot/Node used? | ✅ Documented — see "Why these versions" above | Tech stack section |
 | 10 | Is the CSRF token natural for cookie auth? | ✅ Documented — yes; double-submit is the SPA-standard complement to cookie sessions (defense-in-depth beyond `SameSite=Lax`) | `decision-rationale.md` §3 D2, API reference |
 | 11 | Windows/WSL2 local testing | ✅ Documented — WSL2 localhost forwarding + troubleshooting in Quick Start | Quick Start §1/§Troubleshooting |
+| 12 | The **H2 web console** (dev-only admin panel) is reachable on the production URL (`/h2-console`) — and it runs over a blank-password file DB | ✅ **Fixed (your callout)** — console gated behind `H2_CONSOLE_ENABLED`, **default `false`** in production; only the local dev script re-enables it. Verified `/h2-console` on live returns only the inert SPA fallback | `application.properties`, `SecurityConfig`, `scripts/start-backend.sh` |
+| 13 | The app is **iframe-able** — no clickjacking protection (X-Frame-Options was globally disabled for the H2 console's frameset) | ✅ **Fixed (your callout)** — `X-Frame-Options: SAMEORIGIN` restored (and CSP `frame-ancestors 'none'`) when the console is off; verified on live | `SecurityConfig` |
+| 14 | As a secured, publicly-available app, it should ship **security headers: CSP + access-control** | ✅ **Fixed** — strict allow-list **CSP**, **Permissions-Policy**, **Referrer-Policy**, **CORS deny-by-default** (no wildcard). Verified live that the SPA still renders and full login works under the policy | `SecurityConfig`, `render.yaml`, API reference |
 
 ## What would improve with more time
 
