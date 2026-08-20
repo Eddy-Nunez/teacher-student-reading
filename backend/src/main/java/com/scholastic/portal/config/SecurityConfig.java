@@ -50,13 +50,22 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
                                            JwtAuthFilter jwtAuthFilter,
-                                           @Value("${app.security.csrf-enabled:true}") boolean csrfEnabled) throws Exception {
+                                           @Value("${app.security.csrf-enabled:true}") boolean csrfEnabled,
+                                           @Value("${spring.h2.console.enabled:false}") boolean h2ConsoleEnabled) throws Exception {
         http
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .headers(h -> h.frameOptions(f -> f.disable())) // H2 console dev
+            .headers(h -> {
+                // Frame embedding is only relaxed for the dev H2 console (a frameset UI). In
+                // production the console must stay off, so restore clickjacking protection.
+                if (h2ConsoleEnabled) {
+                    h.frameOptions(f -> f.disable());
+                } else {
+                    h.frameOptions(f -> f.sameOrigin());
+                }
+            })
             .authorizeHttpRequests(auth -> auth
-                // Public auth + dev console.
-                .requestMatchers("/api/auth/**", "/h2-console/**", "/error").permitAll()
+                // Public auth + dev console (console only reachable when enabled).
+                .requestMatchers("/api/auth/**", h2ConsoleEnabled ? "/h2-console/**" : "/h2-console-disabled/**", "/error").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // Protected API namespaces (role gate for each).
                 .requestMatchers("/api/teacher/**").hasRole("TEACHER")

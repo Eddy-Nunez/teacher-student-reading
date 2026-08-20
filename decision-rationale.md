@@ -198,6 +198,15 @@ Bootstrap bundle actually loads (computed styles check) after wiring it in.
 
 ## 6. With more time…
 
+> **Caught in static review post-launch (and fixed):** the dev H2 web console was reaching the
+> production URL (`/h2-console` = real admin console, JDBC-URL login over a blank-password file DB),
+> and the same `frameOptions().disable()` needed for that console had switched **clickjacking
+> protection off for the whole app**. Root cause: a single default Spring profile carried dev
+> conveniences to prod. Fixed by gating the console behind `H2_CONSOLE_ENABLED` (default **off**),
+> restoring `sameOrigin` frame policy when it's off, and opting the console back in only via the
+> local dev script. This is exactly the prod-vs-non-prod config discipline a second pair of eyes
+> catches — and why confroning the live URL in review matters.
+
 1. **Auth hardening:** registration, OAuth/SSO option, refresh-token rotation + revocation
    (httpOnly-cookie storage and CSRF already landed), plus an automated CSRF-mechanism test
    (missing X-XSRF-TOKEN header → 403), currently only browser-E2E covered.
