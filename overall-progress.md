@@ -18,6 +18,11 @@
   (no caching — no scale/latency spec; demo-UX defaults via build + UAT)
 - [x] Final review pass of `decision-rationale.md` + README before sign-off
 
+## Workflow lesson (recorded for future sessions)
+- **Always validate locally BEFORE anything that triggers a deploy.** For this stack:
+  local backend (jar on :8080) + Vite dev frontend (:5173, serves source + proxies /api) is a fast
+  validate-in-a-minute loop; run the browser E2E there first, then commit/push to trigger Render.
+
 ## Open items user can still pick up
 
 1. Optional: CSRF-mechanism automated test (missing X-XSRF-TOKEN → 403), currently browser-E2E only.
