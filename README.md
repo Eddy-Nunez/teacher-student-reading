@@ -181,7 +181,7 @@ docker run -p 8080:8080 portal
 ### 6. Run the tests + build
 
 ```bash
-cd backend  && mvn test         # 10 API integration tests (auth/JWT/role-based access, CSRF session, monotonic + concurrency)
+cd backend  && mvn test         # 11 API integration tests (auth/JWT/role-based access, CSRF session, monotonic + concurrency)
 cd frontend && npm run build    # production bundle → frontend/dist
 ```
 
