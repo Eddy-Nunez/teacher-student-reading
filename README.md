@@ -376,6 +376,8 @@ Callouts made during the review conversation, with dispositions. This log is als
 ## What would improve with more time
 
 - Real registration + classroom/roster management (assign to selected students).
+- Enforce secure, hard-to-bruteforce passwords at registration (e.g. min length + strength / breach check);
+  and encourage **password-less Passkey (WebAuthn) enrollment** as the recommended sign-in path.
 - SQLite via JDBC for the "SQLite" constraint / or Postgres with Flyway migrations.
 - Refresh-token rotation + server-side revocation/deny-listing (httpOnly cookie storage and CSRF
   protection already landed).

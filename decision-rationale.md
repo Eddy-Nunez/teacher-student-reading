@@ -217,6 +217,10 @@ Bootstrap bundle actually loads (computed styles check) after wiring it in.
 1. **Auth hardening:** registration, OAuth/SSO option, refresh-token rotation + revocation
    (httpOnly-cookie storage and CSRF already landed), plus an automated CSRF-mechanism test
    (missing X-XSRF-TOKEN header → 403), currently only browser-E2E covered.
+   - **Strong-password enforcement** at registration (length + strength validation, breached-password
+     check) to resist brute-force.
+   - **Password-less Passkeys (WebAuthn)** as the encouraged, phishing-resistant sign-in path — a
+     natural companion to the cookie-session model already in place.
 2. **Rosters/classes:** assign books to selected students; teacher-managed student accounts.
 3. **Real database:** SQLite (matches the stated constraint) or Postgres + Flyway migrations, both
    via a `DataSource` swap; H2's dialect already keeps SQL generic.
